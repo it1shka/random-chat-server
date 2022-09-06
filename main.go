@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -25,7 +26,10 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	setInfiniteLoop(time.Second, matchmaking)
 	http.HandleFunc("/", websocketHandler)
-	PORT := ":8080"
+	PORT := os.Getenv("PORT")
+	if PORT == "" {
+		PORT = ":8080"
+	}
 	fmt.Printf("Preparing for listening on port %s\n", PORT)
 	http.ListenAndServe(PORT, nil)
 }
