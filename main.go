@@ -19,7 +19,11 @@ var upgrader = websocket.Upgrader{
 }
 
 func websocketHandler(w http.ResponseWriter, r *http.Request) {
-	connection, _ := upgrader.Upgrade(w, r, nil)
+	connection, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		fmt.Fprintf(w, "This is a websocket application")
+		return
+	}
 	processConnectedUser(connection)
 }
 
