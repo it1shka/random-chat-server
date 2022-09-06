@@ -10,8 +10,8 @@ func MessageFoundPartner(conn *websocket.Conn) {
 
 func MessageText(conn *websocket.Conn, text string) {
 	conn.WriteJSON(Json{
-		"type": "message",
-		"text": text,
+		"type":    "message",
+		"message": text,
 	})
 }
 

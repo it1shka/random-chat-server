@@ -9,14 +9,37 @@ func min(a, b int) int {
 	return b
 }
 
+func boolToInt(value bool) int {
+	if value {
+		return 1
+	}
+	return 0
+}
+
+// OLD SLOW VERSION
+
+// func chunksOf[T any](array []T, chunkSize int) [][]T {
+// 	chunks := [][]T{}
+// 	for start := 0; start < len(array); start += chunkSize {
+// 		chunk := []T{}
+// 		for i := start; i < min(start+chunkSize, len(array)); i++ {
+// 			chunk = append(chunk, array[i])
+// 		}
+// 		chunks = append(chunks, chunk)
+// 	}
+// 	return chunks
+// }
+
 func chunksOf[T any](array []T, chunkSize int) [][]T {
-	chunks := [][]T{}
-	for start := 0; start < len(array); start += chunkSize {
-		chunk := []T{}
-		for i := start; i < min(start+chunkSize, len(array)); i++ {
-			chunk = append(chunk, array[i])
-		}
-		chunks = append(chunks, chunk)
+	rlen := len(array)
+	chunksLength := rlen/chunkSize + boolToInt(rlen%chunkSize > 0)
+	chunks := make([][]T, chunksLength)
+	index := 0
+	for start := 0; start < rlen; start += chunkSize {
+		end := min(start+chunkSize, rlen)
+		chunk := array[start:end]
+		chunks[index] = chunk
+		index++
 	}
 	return chunks
 }

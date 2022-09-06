@@ -37,16 +37,19 @@ func processConnectedUser(conn *websocket.Conn) {
 		conn.Close()
 	}()
 
+	// fmt.Printf("Handling connection %p\n", conn)
 	handlingConnection(conn)
 }
 
 func handlingConnection(conn *websocket.Conn) {
 	for {
 		var data Json
-		if err := conn.ReadJSON(data); err != nil {
+		if err := conn.ReadJSON(&data); err != nil {
+			// fmt.Println(err)
 			break
 		}
 
+		// fmt.Printf("Got a message from %p: %v\n", conn, data)
 		switch data["type"] {
 		// find next partner
 		case "next":
