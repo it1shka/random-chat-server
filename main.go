@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -30,10 +31,11 @@ func websocketHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	setInfiniteLoop(time.Second, matchmaking)
 	http.HandleFunc("/", websocketHandler)
+
 	PORT := os.Getenv("PORT")
 	if PORT == "" {
-		PORT = ":8080"
+		PORT = "8080"
 	}
 	fmt.Printf("Preparing for listening on port %s\n", PORT)
-	http.ListenAndServe(PORT, nil)
+	log.Fatal(http.ListenAndServe(":"+PORT, nil))
 }
