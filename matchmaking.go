@@ -1,42 +1,65 @@
 package main
 
-import "github.com/gorilla/websocket"
+import (
+	"github.com/gorilla/websocket"
+)
 
+// communication channel system
+var channels = NewDict[*websocket.Conn, *websocket.Conn]()
+
+func CreateChannel(a, b *websocket.Conn) {
+	channels.Set(a, b)
+	channels.Set(b, a)
+	MessageFoundPartner(a)
+	MessageFoundPartner(b)
+}
+
+func DeleteChannel(conn *websocket.Conn) {
+	paired := channels.Get(conn)
+	channels.Delete(conn)
+	channels.Delete(paired)
+	if paired != nil {
+		MessageEnd(paired)
+	}
+}
+
+// matchmaking logic (main app logic)
 var queue = NewQueue()
-var dispatcher = NewDict[*websocket.Conn, *websocket.Conn]()
 
 func matchmaking() {
-	queue.DoMatchmaking(func(a, b *websocket.Conn) {
-		dispatcher.Set(a, b)
-		dispatcher.Set(b, a)
-		MessageFoundPartner(a)
-		MessageFoundPartner(b)
-	}, 100)
+	queue.DoMatchmaking(CreateChannel, 100)
 }
 
 func processConnectedUser(conn *websocket.Conn) {
-	queue.Append(conn)
 	defer func() {
-		paired := dispatcher.Get(conn)
-		dispatcher.Delete(conn)
-		dispatcher.Delete(paired)
+		queue.Delete(conn)
+		DeleteChannel(conn)
 		conn.Close()
-		if paired != nil {
-			MessageEnd(paired)
-		}
 	}()
+
 	handlingConnection(conn)
 }
 
 func handlingConnection(conn *websocket.Conn) {
 	for {
-		mt, message, err := conn.ReadMessage()
-		if err != nil || mt == websocket.CloseMessage {
+		var data Json
+		if err := conn.ReadJSON(data); err != nil {
 			break
 		}
-		sendTo := dispatcher.Get(conn)
-		if sendTo != nil {
-			MessageText(sendTo, string(message))
+
+		switch data["type"] {
+		// find next partner
+		case "next":
+			DeleteChannel(conn)
+			queue.Append(conn)
+
+		// send message to partner
+		case "message":
+			if partner := channels.Get(conn); partner != nil {
+				message := data["message"].(string)
+				MessageText(partner, message)
+			}
+
 		}
 	}
 }

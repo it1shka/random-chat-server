@@ -8,19 +8,25 @@ import (
 
 type Queue struct {
 	sync.Mutex
-	awaiting []*websocket.Conn
+	awaiting map[*websocket.Conn]bool
 }
 
 func NewQueue() *Queue {
 	return &Queue{
-		awaiting: []*websocket.Conn{},
+		awaiting: make(map[*websocket.Conn]bool),
 	}
 }
 
 func (queue *Queue) Append(conn *websocket.Conn) {
 	queue.Lock()
-	queue.awaiting = append(queue.awaiting, conn)
-	queue.Unlock()
+	defer queue.Unlock()
+	queue.awaiting[conn] = true
+}
+
+func (queue *Queue) Delete(conn *websocket.Conn) {
+	queue.Lock()
+	defer queue.Unlock()
+	delete(queue.awaiting, conn)
 }
 
 func (queue *Queue) DoMatchmaking(
@@ -30,7 +36,8 @@ func (queue *Queue) DoMatchmaking(
 	queue.Lock()
 	defer queue.Unlock()
 
-	chunks := chunksOf(queue.awaiting, chunkSize)
+	allWaiting := keysOf(queue.awaiting)
+	chunks := chunksOf(allWaiting, chunkSize)
 	withoutMatch := make(chan *websocket.Conn)
 
 	var wg sync.WaitGroup
@@ -57,9 +64,9 @@ func (queue *Queue) DoMatchmaking(
 		wg.Wait()
 	}()
 
-	next := []*websocket.Conn{}
+	next := make(map[*websocket.Conn]bool)
 	for conn := range withoutMatch {
-		next = append(next, conn)
+		next[conn] = true
 	}
 	queue.awaiting = next
 

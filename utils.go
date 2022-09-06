@@ -21,6 +21,16 @@ func chunksOf[T any](array []T, chunkSize int) [][]T {
 	return chunks
 }
 
+func keysOf[K comparable, V any](dict map[K]V) []K {
+	keys := make([]K, len(dict))
+	index := 0
+	for key := range dict {
+		keys[index] = key
+		index++
+	}
+	return keys
+}
+
 func setInfiniteLoop(duration time.Duration, function func()) {
 	ticker := time.NewTicker(duration)
 	go func() {
